@@ -1,11 +1,19 @@
 // installed 3rd party packages
+
+// Error display in the case an html or function does not work
 let createError = require('http-errors');
+//Initialize the express module from node package manager
 let express = require('express');
+//Initialize the path module from node package manager
 let path = require('path');
+//Initialize the cookie-parser module from node package manager
 let cookieParser = require('cookie-parser');
+//Initialize the morgan module from node package manager
 let logger = require('morgan');
 
+//Granting app.js access to the index routes
 let indexRouter = require('./routes/index');
+//Granting app.js access to the users routes
 let usersRouter = require('./routes/users');
 
 let app = express();
@@ -33,9 +41,12 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 app.use('/users', usersRouter);
-//Ads public folder to app.js
+//Add public folder to app.js
+//So that static images an be displayed in the web page
 app.use(express.static(path.join(__dirname,'public')))
 
+//Add node modules to app.js
+//So that modules can be used by app.js
 app.use(express.static(path.join(__dirname,'node_modules')));
 app.use('/', indexRouter);
 
