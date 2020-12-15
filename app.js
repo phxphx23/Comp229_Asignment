@@ -15,10 +15,23 @@ let logger = require('morgan');
 let indexRouter = require('./routes/index');
 //Granting app.js access to the users routes
 let usersRouter = require('./routes/users');
+let booksrouter = require('./routes/contact')
+
+// modules for authentication
+let session = require('express-session');
+let passport = require('passport');
+
+let passportJWT = require('passport-jwt');
+let JWTStrategy = passportJWT.Strategy;
+let ExtractJWT = passportJWT.ExtractJwt;
+
+let passportLocal = require('passport-local');
+let localStrategy = passportLocal.Strategy;
+let flash = require('connect-flash');
 
 let app = express();
 
-/*//database setup
+//database setup
 let mongoose=require('mongoose')
 let DB = require('./Server/Config/db')
 
@@ -29,7 +42,50 @@ let mongoDB=mongoose.connection;
 mongoDB.on('error',console.error.bind(console,'Connection Error'));
 mongoDB.once('open',()=>{
   console.log('Connected to MongoDb...');
-});*/
+});
+
+//setup express session
+app.use(session({
+  secret: "SomeSecret",
+  saveUninitialized: false,
+  resave: false
+}));
+
+// initialize flash
+app.use(flash());
+
+// initialize passport
+app.use(passport.initialize());
+app.use(passport.session());
+
+// passport user configuration
+
+// create a User Model Instance
+let userModel = require('./Server/models/user');
+let User = userModel.User;
+
+// implement a User Authentication Strategy
+passport.use(User.createStrategy());
+
+// serialize and deserialize the User info
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+let jwtOptions = {};
+jwtOptions.jwtFromRequest = ExtractJWT.fromAuthHeaderAsBearerToken();
+jwtOptions.secretOrKey = DB.Secret;
+
+let strategy = new JWTStrategy(jwtOptions, (jwt_payload, done) => {
+  User.findById(jwt_payload.id)
+    .then(user => {
+      return done(null, user);
+    })
+    .catch(err => {
+      return done(err, false);
+    });
+});
+
+passport.use(strategy);
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -41,6 +97,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 app.use('/users', usersRouter);
+app.use('/contact-list', booksrouter);
 //Add public folder to app.js
 //So that static images an be displayed in the web page
 app.use(express.static(path.join(__dirname,'public')))
